@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestNewSchedule(t *testing.T) {
+func TestSchedule(t *testing.T) {
 	suite := []struct {
 		Name         string
 		Location     string
@@ -101,5 +101,47 @@ func TestNewSchedule(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestSchedules(t *testing.T) {
+	laMorning, err := NewSchedule(
+		map[string][]string{"Monday": []string{"9:00AM", "12:00PM"}},
+		"America/Los_Angeles",
+	)
+	if err != nil {
+		t.Error("expected morning schedule to create")
+	}
+
+	laAfternoon, err := NewSchedule(
+		map[string][]string{"Monday": []string{"12:00PM", "5:00PM"}},
+		"America/Los_Angeles",
+	)
+	if err != nil {
+		t.Error("expected afternoon schedule to create")
+	}
+
+	morning, err := time.Parse(time.RFC1123, "Mon, 07 Aug 2017 10:00:00 PST")
+	if err != nil {
+		t.Error("expected time to parse")
+	}
+	afternoon, err := time.Parse(time.RFC1123, "Mon, 07 Aug 2017 15:00:00 PST")
+	if err != nil {
+		t.Error("expected time to parse")
+	}
+	night, err := time.Parse(time.RFC1123, "Mon, 07 Aug 2017 20:00:00 PST")
+	if err != nil {
+		t.Error("expected time to parse")
+	}
+	scheduled := Schedules([]*Schedule{laMorning, laAfternoon})
+
+	if !scheduled.InAny(morning) {
+		t.Error("expected morning to be in schedule")
+	}
+	if !scheduled.InAny(afternoon) {
+		t.Error("expected afternoon to be in schedule")
+	}
+	if scheduled.InAny(night) {
+		t.Error("expected night to not be in schedule")
 	}
 }

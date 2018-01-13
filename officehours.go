@@ -19,6 +19,21 @@ var days = []string{
 	"Saturday",
 }
 
+// Schedules is a collection of Schedule objects.
+type Schedules []*Schedule
+
+// InAny will return true if any Schedule in the collection has the time in its
+// Schedule.
+func (s Schedules) InAny(t time.Time) bool {
+	for _, schedule := range s {
+		if schedule.InSchedule(t) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // A Schedule holds a weekly schedule of time ranges and days of the week,
 // which can be queried with a time to see if that time falls in or out of the
 // schedule.
