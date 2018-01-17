@@ -6,17 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
 var days = []string{
-	"Sunday",
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday",
+	"sunday",
+	"monday",
+	"tuesday",
+	"wednesday",
+	"thursday",
+	"friday",
+	"saturday",
 }
 
 // Schedules is a collection of Schedule objects.
@@ -43,11 +44,11 @@ type Schedule struct {
 }
 
 // NewSchedule instantiates a new schedule. The passed-in map must have valid
-// full day-of-the-week names as keys (e.g. Monday), and the values must be a
-// slice with a length of exactly two. They correspond to the start and end
-// time for that day, and the format must be time.Kitchen (e.g. 3:00PM). The
-// passed-in zone name is required, and must be known to the operating system
-// (e.g. "America/Los_Angeles", "MST").
+// full day-of-the-week names as keys, though case is ignored (e.g. Monday and
+// monday are valid), and the values must be a slice with a length of exactly
+// two. They correspond to the start and end time for that day, and the format
+// must be time.Kitchen (e.g. 3:00PM). The passed-in zone name is required, and
+// must be known to the operating system (e.g. "America/Los_Angeles", "MST").
 func NewSchedule(daily map[string][]string, zoneName string) (*Schedule, error) {
 	location, err := time.LoadLocation(zoneName)
 	if err != nil {
@@ -56,7 +57,7 @@ func NewSchedule(daily map[string][]string, zoneName string) (*Schedule, error) 
 Days:
 	for provided := range daily {
 		for _, allowed := range days {
-			if provided == allowed {
+			if strings.ToLower(provided) == allowed {
 				continue Days
 			}
 		}
@@ -75,7 +76,14 @@ Days:
 		}
 	}
 
-	return &Schedule{daily: daily, location: location}, nil
+	// we just lowercase all the day names so that it doesn't matter what case
+	// they were provided with.
+	normalizedCase := make(map[string][]string)
+	for day, time := range daily {
+		normalizedCase[strings.ToLower(day)] = time
+	}
+
+	return &Schedule{daily: normalizedCase, location: location}, nil
 }
 
 // InSchedule takes a time and determines if it falls under the weekly
@@ -83,7 +91,7 @@ Days:
 // passed-in time, because the comparison is timezone aware.
 func (s Schedule) InSchedule(t time.Time) bool {
 	localized := t.In(s.location)
-	times, found := s.daily[localized.Weekday().String()]
+	times, found := s.daily[strings.ToLower(localized.Weekday().String())]
 	if !found {
 		return false
 	}

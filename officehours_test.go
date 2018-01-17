@@ -34,6 +34,17 @@ func TestSchedule(t *testing.T) {
 			},
 		},
 		{
+			Name: "with a working schedule using lowercase day names",
+			Schedule: map[string][]string{
+				"monday": []string{"9:00AM", "5:00PM"},
+				"friday": []string{"9:00AM", "1:00PM"},
+			},
+			Expectations: map[string]bool{
+				"Fri, 11 Aug 2017 11:00:00 PST": true,  // in schedule on day
+				"Fri, 11 Aug 2017 20:00:00 PST": false, // out of schedule on day
+			},
+		},
+		{
 			Name: "with a bad weekday name",
 			Schedule: map[string][]string{
 				"Shmursday": []string{"9:00AM", "5:00PM"},
