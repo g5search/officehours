@@ -7,6 +7,11 @@ import (
 )
 
 func TestSchedule(t *testing.T) {
+	la, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		t.Error("expected America/Los_Angeles timezone to load properly")
+	}
+
 	suite := []struct {
 		Name         string
 		Location     string
@@ -92,7 +97,7 @@ func TestSchedule(t *testing.T) {
 					return
 				}
 
-				parsed, err := time.Parse(time.RFC1123, s)
+				parsed, err := time.ParseInLocation(time.RFC1123, s, la)
 				if err != nil {
 					t.Errorf("parsing time '%s': %v", s, err)
 				}
@@ -121,15 +126,20 @@ func TestSchedules(t *testing.T) {
 		t.Error("expected afternoon schedule to create")
 	}
 
-	morning, err := time.Parse(time.RFC1123, "Mon, 07 Aug 2017 10:00:00 PST")
+	la, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		t.Error("expected America/Los_Angeles timezone to load properly")
+	}
+
+	morning, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 10:00:00 PST", la)
 	if err != nil {
 		t.Error("expected time to parse")
 	}
-	afternoon, err := time.Parse(time.RFC1123, "Mon, 07 Aug 2017 15:00:00 PST")
+	afternoon, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 15:00:00 PST", la)
 	if err != nil {
 		t.Error("expected time to parse")
 	}
-	night, err := time.Parse(time.RFC1123, "Mon, 07 Aug 2017 20:00:00 PST")
+	night, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 20:00:00 PST", la)
 	if err != nil {
 		t.Error("expected time to parse")
 	}
