@@ -6,11 +6,17 @@ import (
 	"time"
 )
 
-func TestSchedule(t *testing.T) {
-	la, err := time.LoadLocation("America/Los_Angeles")
+var arizona *time.Location
+
+func init() {
+	var err error
+	arizona, err = time.LoadLocation("America/Phoenix")
 	if err != nil {
-		t.Error("expected America/Los_Angeles timezone to load properly")
+		panic("expected America/Phoenix timezone to load properly")
 	}
+}
+
+func TestSchedule(t *testing.T) {
 
 	suite := []struct {
 		Name         string
@@ -26,9 +32,9 @@ func TestSchedule(t *testing.T) {
 				"Friday": []string{"9:00AM", "1:00PM"},
 			},
 			Expectations: map[string]bool{
-				"Fri, 11 Aug 2017 11:00:00 PST": true,  // in schedule on day
-				"Fri, 11 Aug 2017 20:00:00 PST": false, // out of schedule on day
-				"Thu, 10 Aug 2017 12:00:00 PST": false, // schedule for day undefined
+				"Fri, 11 Aug 2017 11:00:00 MST": true,  // in schedule on day
+				"Fri, 11 Aug 2017 20:00:00 MST": false, // out of schedule on day
+				"Thu, 10 Aug 2017 12:00:00 MST": false, // schedule for day undefined
 				"Mon, 07 Aug 2017 17:00:00 UTC": true,  // other zone in schedule
 				"Mon, 07 Aug 2017 10:00:00 UTC": false, // other zone out of schedule
 			},
@@ -40,8 +46,8 @@ func TestSchedule(t *testing.T) {
 				"friday": []string{"9:00AM", "1:00PM"},
 			},
 			Expectations: map[string]bool{
-				"Fri, 11 Aug 2017 11:00:00 PST": true,  // in schedule on day
-				"Fri, 11 Aug 2017 20:00:00 PST": false, // out of schedule on day
+				"Fri, 11 Aug 2017 11:00:00 MST": true,  // in schedule on day
+				"Fri, 11 Aug 2017 20:00:00 MST": false, // out of schedule on day
 			},
 		},
 		{
@@ -75,9 +81,7 @@ func TestSchedule(t *testing.T) {
 
 	for _, test := range suite {
 		t.Run(test.Name, func(t *testing.T) {
-			// This is going to have daily savings applied or not depending on when
-			// you run this. Fun times!
-			location := "America/Los_Angeles"
+			location := "America/Phoenix"
 			if test.Location != "" {
 				location = test.Location
 			}
@@ -108,12 +112,12 @@ func TestSchedule(t *testing.T) {
 					return
 				}
 
-				parsed, err := time.ParseInLocation(time.RFC1123, s, la)
+				parsed, err := time.ParseInLocation(time.RFC1123, s, arizona)
 				if err != nil {
 					t.Errorf("parsing time '%s': %v", s, err)
 				}
 				if schedule.InSchedule(parsed) != expected {
-					t.Errorf("expected time '%s' IsSchedule to be %v, was not", s, expected)
+					t.Errorf("expected time '%s' IsSchedule to be %v, was not. UTC value: %v", s, expected, parsed.UTC())
 				}
 			}
 		})
@@ -121,40 +125,35 @@ func TestSchedule(t *testing.T) {
 }
 
 func TestSchedules(t *testing.T) {
-	laMorning, err := NewSchedule(
+	arizonaMorning, err := NewSchedule(
 		map[string][]string{"Monday": []string{"9:00AM", "12:00PM"}},
-		"America/Los_Angeles",
+		"America/Phoenix",
 	)
 	if err != nil {
 		t.Error("expected morning schedule to create")
 	}
 
-	laAfternoon, err := NewSchedule(
+	arizonaAfternoon, err := NewSchedule(
 		map[string][]string{"Monday": []string{"12:00PM", "5:00PM"}},
-		"America/Los_Angeles",
+		"America/Phoenix",
 	)
 	if err != nil {
 		t.Error("expected afternoon schedule to create")
 	}
 
-	la, err := time.LoadLocation("America/Los_Angeles")
-	if err != nil {
-		t.Error("expected America/Los_Angeles timezone to load properly")
-	}
-
-	morning, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 10:00:00 PST", la)
+	morning, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 10:00:00 MST", arizona)
 	if err != nil {
 		t.Error("expected time to parse")
 	}
-	afternoon, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 15:00:00 PST", la)
+	afternoon, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 15:00:00 MST", arizona)
 	if err != nil {
 		t.Error("expected time to parse")
 	}
-	night, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 20:00:00 PST", la)
+	night, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 20:00:00 MST", arizona)
 	if err != nil {
 		t.Error("expected time to parse")
 	}
-	scheduled := Schedules([]*Schedule{laMorning, laAfternoon})
+	scheduled := Schedules([]*Schedule{arizonaMorning, arizonaAfternoon})
 
 	if !scheduled.InAny(morning) {
 		t.Error("expected morning to be in schedule")
