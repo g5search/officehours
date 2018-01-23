@@ -90,6 +90,15 @@ Days:
 // schedule. You should be intentional about setting the timezone of the
 // passed-in time, because the comparison is timezone aware.
 func (s Schedule) InSchedule(t time.Time) bool {
+	return s.InScheduleWithOffsets(t, 0, 0)
+}
+
+// InScheduleWithOffsets checks to see if the passed-in time is within the
+// schedule, tweaking the schedule to move the start and end times by the
+// passed-in duration. To move a time forward, pass a negative time.Duration.
+// Can be used to allow multiple objects to use the same schedule, but have
+// some of them always shut down a little earlier and start up a little later.
+func (s Schedule) InScheduleWithOffsets(t time.Time, before time.Duration, after time.Duration) bool {
 	localized := t.In(s.location)
 	times, found := s.daily[strings.ToLower(localized.Weekday().String())]
 	if !found {
@@ -98,7 +107,9 @@ func (s Schedule) InSchedule(t time.Time) bool {
 
 	// these were all validated good in the constructor
 	start, _ := time.Parse(time.Kitchen, times[0])
+	start = start.Add(before)
 	end, _ := time.Parse(time.Kitchen, times[1])
+	end = end.Add(after)
 	startOnDay := relativeDayTime(localized, start.Hour(), start.Minute())
 	endOnDay := relativeDayTime(localized, end.Hour(), end.Minute())
 

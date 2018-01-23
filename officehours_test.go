@@ -19,11 +19,12 @@ func init() {
 func TestSchedule(t *testing.T) {
 
 	suite := []struct {
-		Name         string
-		Location     string
-		Schedule     map[string][]string
-		Err          string
-		Expectations map[string]bool
+		Name          string
+		Location      string
+		Schedule      map[string][]string
+		Err           string
+		Expectations  map[string]bool
+		Before, After time.Duration
 	}{
 		{
 			Name: "with a working schedule",
@@ -77,6 +78,22 @@ func TestSchedule(t *testing.T) {
 			},
 			Err: "can't parse schedule: parsing time \"NINE AM\"",
 		},
+		{
+			Name: "with an offset that places the time in schedule",
+			Schedule: map[string][]string{
+				"Monday": []string{"9:00AM", "5:00PM"},
+				"Friday": []string{"9:00AM", "1:00PM"},
+			},
+			Before: -5 * time.Minute,
+			After:  5 * time.Minute,
+			Expectations: map[string]bool{
+				"Fri, 11 Aug 2017 9:00:00 MST":  true,  // in schedule on day
+				"Fri, 11 Aug 2017 8:59:00 MST":  true,  // 1m before schedule on day
+				"Fri, 11 Aug 2017 8:54:00 MST":  false, // 6m before schedule on day
+				"Fri, 11 Aug 2017 13:01:00 MST": true,  // 1m after schedule on day
+				"Fri, 11 Aug 2017 13:06:00 MST": false, // 6m after schedule on day
+			},
+		},
 	}
 
 	for _, test := range suite {
@@ -111,13 +128,20 @@ func TestSchedule(t *testing.T) {
 					t.Error("schedule is unexpectedly nil")
 					return
 				}
-
 				parsed, err := time.ParseInLocation(time.RFC1123, s, arizona)
 				if err != nil {
 					t.Errorf("parsing time '%s': %v", s, err)
 				}
-				if schedule.InSchedule(parsed) != expected {
-					t.Errorf("expected time '%s' IsSchedule to be %v, was not. UTC value: %v", s, expected, parsed.UTC())
+
+				var actual bool
+				if test.After != 0 && test.Before != 0 {
+					actual = schedule.InScheduleWithOffsets(parsed, test.Before, test.After)
+				} else {
+					actual = schedule.InSchedule(parsed)
+				}
+
+				if actual != expected {
+					t.Errorf("expected time '%s' InSchedule to be %v, was %v", s, expected, actual)
 				}
 			}
 		})
