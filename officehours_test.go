@@ -169,6 +169,10 @@ func TestSchedules(t *testing.T) {
 	if err != nil {
 		t.Error("expected time to parse")
 	}
+	morningMinusOne, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 08:59:00 MST", arizona)
+	if err != nil {
+		t.Error("expected time to parse")
+	}
 	afternoon, err := time.ParseInLocation(time.RFC1123, "Mon, 07 Aug 2017 15:00:00 MST", arizona)
 	if err != nil {
 		t.Error("expected time to parse")
@@ -177,15 +181,21 @@ func TestSchedules(t *testing.T) {
 	if err != nil {
 		t.Error("expected time to parse")
 	}
-	scheduled := Schedules([]*Schedule{arizonaMorning, arizonaAfternoon})
 
-	if !scheduled.InAny(morning) {
+	schedules := Schedules([]*Schedule{arizonaMorning, arizonaAfternoon})
+	if !schedules.InAny(morning) {
 		t.Error("expected morning to be in schedule")
 	}
-	if !scheduled.InAny(afternoon) {
+	if !schedules.InAny(afternoon) {
 		t.Error("expected afternoon to be in schedule")
 	}
-	if scheduled.InAny(night) {
+	if schedules.InAny(night) {
 		t.Error("expected night to not be in schedule")
+	}
+	if schedules.InAny(morningMinusOne) {
+		t.Error("expected morningMinusOne to not be in schedule without offset")
+	}
+	if !schedules.InAnyWithOffsets(morningMinusOne, -5*time.Minute, 0) {
+		t.Error("expected morningMinusOne to be in schedule with offset")
 	}
 }

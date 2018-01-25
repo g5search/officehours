@@ -35,6 +35,18 @@ func (s Schedules) InAny(t time.Time) bool {
 	return false
 }
 
+// InAnyWithOffsets will return true if any Schedule in the collection has the
+// time in its Schedule, using InScheduleWithOffsets.
+func (s Schedules) InAnyWithOffsets(t time.Time, before, after time.Duration) bool {
+	for _, schedule := range s {
+		if schedule.InScheduleWithOffsets(t, before, after) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // A Schedule holds a weekly schedule of time ranges and days of the week,
 // which can be queried with a time to see if that time falls in or out of the
 // schedule.
