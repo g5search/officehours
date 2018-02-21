@@ -1,0 +1,7 @@
+officehours:
+  build:
+    image: officehours
+    dockerfile: ci/Dockerfile
+  encrypted_env_file: ci/codeclimate.env.encrypted
+  volumes:
+    - ./coverage:/coverage
